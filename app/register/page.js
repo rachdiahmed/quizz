@@ -20,7 +20,7 @@ export default function Register() {
       const response = await fetch("/api/check-registration");
       if (response.ok) {
         // If user is already registered, redirect to quiz
-        router.push("/quiz");
+        router.push("/quiz/1");
       }
     } catch (error) {
       console.error("Failed to check registration:", error);
