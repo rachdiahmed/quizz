@@ -1,18 +1,17 @@
-"use client";import { useEffect, useState } from "react";
+"use client";
+import { useEffect, useState } from "react";
 import Image from "next/image";
 import background from "../../public/background.png";
 import aiAcademyLogo from "../../public/ai_academy.png";
-import useWebSocket from "../hooks/useWebSocket"; // Adjust the path as per your structure
 
 export default function Quiz() {
   const [questions, setQuestions] = useState([]);
   const [title, setTitle] = useState("");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
   const [quizNumber, setQuizNumber] = useState(1);
-  const [selectedOption, setSelectedOption] = useState(null);
+  const [selectedOptions, setSelectedOptions] = useState([]); // Array to store selected options
   const [elapsedTime, setElapsedTime] = useState(0);
-
-  const socket = useWebSocket("http://localhost:3000"); // Adjust WebSocket URL
+  const [startTime, setStartTime] = useState(0);
 
   useEffect(() => {
     async function fetchQuestionsAndStartTime() {
@@ -22,53 +21,71 @@ export default function Quiz() {
           const data = await res.json();
           setQuestions(data.questions);
           setTitle(data.title);
-
-          // Start timer when quiz data is fetched
-          if (socket) {
-            socket.emit("startTimer", { userId: "replace_with_user_id" });
-          }
-        } else {
-          throw new Error("Failed to fetch quiz data");
+          setStartTime(data.startTime);
         }
       } catch (error) {
         console.error("Error fetching quiz data:", error);
-        // Handle error fetching quiz data
       }
     }
     fetchQuestionsAndStartTime();
-  }, [quizNumber, socket]);
+  }, [quizNumber]);
 
   useEffect(() => {
-    if (!socket) return;
+    const timer = setInterval(() => {
+      if (startTime) {
+        const elapsedTime = new Date().getTime() - startTime;
+        setElapsedTime(elapsedTime);
+      }
+    }, 1000);
 
-    socket.on("currentTime", (currentTime) => {
-      setElapsedTime(currentTime);
-    });
+    return () => clearInterval(timer);
+  }, [startTime]);
 
-    return () => {
-      socket.off("currentTime");
-    };
-  }, [socket]);
+  const submitQuiz = async () => {
+    try {
+      const res = await fetch(`/api/quiz/${quizNumber}/submit`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          quizNumber,
+          answers: selectedOptions,
+          elapsedTime,
+        }),
+      });
 
-  const nextQuestion = () => {
+      if (!res.ok) {
+        throw new Error("Error submitting quiz");
+      }
+
+      // Handle response if needed
+    } catch (error) {
+      console.error("Error submitting quiz:", error);
+    }
+  };
+
+  const nextQuestion = async () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
     } else if (quizNumber < 3) {
+      await submitQuiz();
       setQuizNumber(quizNumber + 1);
       setCurrentQuestionIndex(0);
+      setSelectedOptions([]); // Reset selected options for the next quiz
     } else {
+      await submitQuiz();
       alert("Quiz terminé!");
-    }
-    setSelectedOption(null); // Reset selected option for the next question
-
-    // Start timer for the next question
-    if (socket) {
-      socket.emit("startTimer", { userId: "replace_with_user_id" });
     }
   };
 
   const handleOptionClick = (index) => {
-    setSelectedOption(index);
+    const newSelectedOptions = [...selectedOptions];
+    newSelectedOptions[currentQuestionIndex] = {
+      questionId: questions[currentQuestionIndex].id,
+      selectedOption: index,
+    };
+    setSelectedOptions(newSelectedOptions);
   };
 
   const currentQuestion = questions[currentQuestionIndex];
@@ -118,7 +135,7 @@ export default function Quiz() {
               key={index}
               onClick={() => handleOptionClick(index)}
               className={`p-3 border rounded-lg text-center cursor-pointer ${
-                selectedOption === index
+                selectedOptions[currentQuestionIndex]?.selectedOption === index
                   ? "bg-blue-200"
                   : "bg-gray-100 hover:bg-gray-200"
               }`}
@@ -147,7 +164,10 @@ export default function Quiz() {
               width: "70%",
               maxWidth: "300px",
             }}
-            disabled={selectedOption === null} // Disable button if no option is selected
+            disabled={
+              selectedOptions[currentQuestionIndex]?.selectedOption ===
+              undefined
+            }
           >
             Next Question
           </button>

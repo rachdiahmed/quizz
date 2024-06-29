@@ -1,5 +1,5 @@
 "use client";
-import { useRouter } from "next/navigation"; // Use useRouter from 'next/router'
+import { useRouter } from "next/navigation"; 
 import { useEffect, useState } from "react";
 import background from "../public/background.png";
 
@@ -36,7 +36,7 @@ export default function Home() {
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify({ name, email, phone }),
+        body: JSON.stringify({ fullName: name, email, phoneNumber:phone }),
       });
 
       if (response.ok) {
@@ -98,6 +98,7 @@ export default function Home() {
               required
             />
           </div>
+
           <div className="mb-6">
             <label
               className="block text-gray-700 font-bold text-lg"
@@ -114,6 +115,7 @@ export default function Home() {
               required
             />
           </div>
+
           <div className="flex justify-center">
             <button
               type="submit"

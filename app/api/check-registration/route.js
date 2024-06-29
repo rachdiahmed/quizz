@@ -7,7 +7,7 @@ export async function GET(request) {
   const token = request.cookies["user-token"];
 
   if (!token) {
-    return NextResponse.json({ authenticated: false }, { status: 200 });
+    return NextResponse.json({ authenticated: false }, { status: 403 });
   }
 
   try {

@@ -2,20 +2,39 @@
 
 import { NextResponse } from "next/server";
 import { SignJWT } from "jose";
-import { v4 as uuidv4 } from "uuid"; // Import UUID generator
 
 export async function POST(request) {
-  const { name, email, phone } = await request.json();
+  const { fullName, email, phoneNumber } = await request.json(); // Adjusted to match the specified keys
 
-  if (!name || !email || !phone) {
+  if (!fullName || !email || !phoneNumber) {
     return NextResponse.json({ error: "Invalid data" }, { status: 400 });
   }
 
-  // Generate a unique userID using UUID
-  const userId = uuidv4(); // Generates a unique UUID (e.g., '1c65d3dc-64ea-4c12-a5a5-2fd0c3b17291')
+  // Example: Posting data to your Strapi API
+  const res = await fetch(
+    `${process.env.NEXT_PUBLIC_STRAPI_API_URL}/students`,
+    {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        Authorization: `Bearer ${process.env.STRAPI_API_TOKEN}`,
+      },
+      body: JSON.stringify({data:{
+        fullName,
+        email,
+        phoneNumber,
+      }}),
+    }
+  );
+  if (!res.ok) {
+    return NextResponse.json({ error: "Failed to register" }, { status: 500 });
+  }
+
+  const { userId } = await res.json();
 
   // Create a JWT token for authentication
-  const token = await new SignJWT({ name, email, userId })
+  const token = await new SignJWT({ fullName, email, userId })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("2h")
     .sign(new TextEncoder().encode(process.env.JWT_SECRET));

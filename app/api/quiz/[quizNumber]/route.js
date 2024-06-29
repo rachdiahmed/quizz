@@ -2,8 +2,9 @@ import { NextResponse } from "next/server";
 
 export async function GET(request, { params }) {
   const { quizNumber } = params;
-  console.log("Handler called with quiz number:", quizNumber);
+
   try {
+    // Fetch quiz data from Strapi
     const response = await fetch(
       `${process.env.NEXT_PUBLIC_STRAPI_API_URL}/quizzes/${quizNumber}?populate=*`,
       {
@@ -14,13 +15,14 @@ export async function GET(request, { params }) {
         },
       }
     );
-    console.log("Received response from Strapi");
+
     if (!response.ok) {
       throw new Error("Failed to fetch data");
     }
 
     const data = await response.json();
     const quizData = data.data.attributes.questions.data.map((question) => ({
+      id:question.id,
       question: question.attributes.question,
       options: question.attributes.answers.data,
     }));
