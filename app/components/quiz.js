@@ -3,50 +3,55 @@ import { useEffect, useState } from "react";
 import Image from "next/image";
 import background from "../../public/background.png";
 import aiAcademyLogo from "../../public/ai_academy.png";
+import { useRouter } from "next/navigation";
 
-export default function Quiz() {
+export default function Quiz({ quizNumber,nextQuiz }) {
   const [questions, setQuestions] = useState([]);
   const [title, setTitle] = useState("");
   const [currentQuestionIndex, setCurrentQuestionIndex] = useState(0);
-  const [quizNumber, setQuizNumber] = useState(1);
   const [selectedOptions, setSelectedOptions] = useState([]); // Array to store selected options
   const [elapsedTime, setElapsedTime] = useState(0);
-  const [startTime, setStartTime] = useState(0);
+  const [startTime, setStartTime] = useState(null);
   const [userId, setUserId] = useState(null);
+  const [isQuizStarted, setIsQuizStarted] = useState(false);
+  const router = useRouter();
 
   useEffect(() => {
-    async function fetchQuestionsAndStartTime() {
+    async function fetchQuestions() {
       try {
         const res = await fetch(`/api/quiz/${quizNumber}`);
         if (res.ok) {
           const data = await res.json();
           setQuestions(data.questions);
           setTitle(data.title);
-          setStartTime(data.startTime);
         }
       } catch (error) {
         console.error("Error fetching quiz data:", error);
       }
     }
-    fetchQuestionsAndStartTime();
+    fetchQuestions();
 
-       const userID = localStorage.getItem("userID");
-       console.log(userID);
-       if (userID) {
-         setUserId(userID);
-       }
+    const userID = localStorage.getItem("userID");
+    if (userID) {
+      setUserId(userID);
+    }
   }, [quizNumber]);
 
   useEffect(() => {
-    const timer = setInterval(() => {
-      if (startTime) {
+    let timer;
+    if (isQuizStarted && startTime) {
+      timer = setInterval(() => {
         const elapsedTime = new Date().getTime() - startTime;
         setElapsedTime(elapsedTime);
-      }
-    }, 1000);
-
+      }, 1000);
+    }
     return () => clearInterval(timer);
-  }, [startTime]);
+  }, [isQuizStarted, startTime]);
+
+  const startQuiz = () => {
+    setStartTime(new Date().getTime());
+    setIsQuizStarted(true);
+  };
 
   const submitQuiz = async () => {
     try {
@@ -76,14 +81,13 @@ export default function Quiz() {
   const nextQuestion = async () => {
     if (currentQuestionIndex < questions.length - 1) {
       setCurrentQuestionIndex(currentQuestionIndex + 1);
-    } else if (quizNumber < 3) {
-      await submitQuiz();
-      setQuizNumber(quizNumber + 1);
-      setCurrentQuestionIndex(0);
-      setSelectedOptions([]); // Reset selected options for the next quiz
     } else {
       await submitQuiz();
-      alert("Quiz terminé!");
+      if(nextQuiz==4){
+      router.push("/congrats/");
+
+      }
+     else router.push("/quiz/" + nextQuiz);
     }
   };
 
@@ -95,8 +99,41 @@ export default function Quiz() {
 
   const currentQuestion = questions[currentQuestionIndex];
 
-  if (!currentQuestion) {
-    return <div>Loading...</div>;
+  if (!isQuizStarted) {
+    return (
+      <div
+        className="min-h-screen flex items-center justify-center bg-cover bg-center bg-no-repeat"
+        style={{ backgroundImage: `url(${background.src})` }}
+      >
+        <div className="bg-white p-10 rounded shadow-lg max-w-3xl w-full text-center">
+          <div className="flex flex-col items-center mb-8">
+            <Image
+              src={aiAcademyLogo}
+              alt="AI Academy Logo"
+              width={500}
+              height={120}
+            />
+            <h2
+              className="text-3xl font-bold mt-6"
+              style={{ fontFamily: "Poppins" }}
+            >
+              {title}
+            </h2>
+          </div>
+          <button
+            onClick={startQuiz}
+            className="bg-blue-600 text-white py-4 px-3 rounded mt-4"
+            style={{
+              backgroundColor: "#19255B",
+              width: "70%",
+              maxWidth: "300px",
+            }}
+          >
+            Start Quiz
+          </button>
+        </div>
+      </div>
+    );
   }
 
   return (
@@ -109,8 +146,8 @@ export default function Quiz() {
           <Image
             src={aiAcademyLogo}
             alt="AI Academy Logo"
-            maxWidth={500}
-            maxHeight={120}
+            width={500}
+            height={120}
           />
           <h2
             className="text-3xl font-bold mt-6 text-center"

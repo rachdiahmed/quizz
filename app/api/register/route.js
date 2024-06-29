@@ -26,15 +26,20 @@ export async function POST(request) {
         phoneNumber,
       }}),
     }
+
   );
+
   if (!res.ok) {
     return NextResponse.json({ error: "Failed to register" }, { status: 500 });
   }
 
-  const { userId } = await res.json();
+  const data = await res.json();
+
+const userID=data.data.id;
+
 
   // Create a JWT token for authentication
-  const token = await new SignJWT({ fullName, email, userId })
+  const token = await new SignJWT({ fullName, email, id: userID })
     .setProtectedHeader({ alg: "HS256" })
     .setExpirationTime("2h")
     .sign(new TextEncoder().encode(process.env.JWT_SECRET));
@@ -42,7 +47,7 @@ export async function POST(request) {
   // Return the response with userId and token
   const response = NextResponse.json({
     message: "Registered successfully",
-    userId,
+    id: userID,
   });
   response.cookies.set("user-token", token, {
     httpOnly: true,

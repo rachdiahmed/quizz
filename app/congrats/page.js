@@ -1,15 +1,13 @@
 "use client";
-import aiAcademyLogo from "../public/ai_academy.png";
-import partners from "../public/partners.png";
+import aiAcademyLogo from "../../public/ai_academy.png";
+import partners from "../../public/partners.png";
 import Image from "next/image";
 
-import background from "../public/background.png";
+import background from "../../public/background.png";
 import { useRouter } from "next/navigation";
 
-export default function Home() {
- 
+export default function Congrats() {
   const router = useRouter();
-
 
   return (
     <div
@@ -32,34 +30,11 @@ export default function Home() {
           </h2>
         </div>
 
-          <div className="flex justify-center">
-            <button
-onClick={
-  function()
-{  router.push("/register");
-}
-
-}         
-     className="bg-blue-600 text-white py-4 px-3 rounded"
-              style={{
-                backgroundColor: "#19255B",
-                width: "70%",
-                maxWidth: "300px",
-              }}
-            >
-              Start
-            </button>
-          </div>
-
+        <div className="flex justify-center">
+          <h2>Thank you for your participation !</h2>
+        </div>
       </div>
-      <div className=" items-center mb-8">
-        <Image
-          src={partners}
-          alt="AI Academy Logo"
-          maxWidth={50}
-          maxHeight={50}
-        />
-      </div>
+    
     </div>
   );
 }
